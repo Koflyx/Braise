@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0F0F14">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230F0F14'/%3E%3Cpath d='M32 10c2 8-6 12-6 20a10 10 0 0 0 20 0c0-5-3-8-4-12-4 3-3 6-3 9a4 4 0 0 1-8 0c0-7 8-9 1-17z' fill='%237A00E6'/%3E%3Cellipse cx='32' cy='50' rx='11' ry='3' fill='%237A00E6' opacity='.35'/%3E%3C/svg%3E">
+<title>Braise</title>
+<style>
+  :root{
+    --bg:#0F0F14; --panel:#17171F; --panel-2:#1E1E29;
+    --txt:#E5E5EA; --muted:#8A8A97; --accent:#7A00E6;
+    --accent-soft:rgba(122,0,230,.16); --ok:#22C55E; --warn:#F59E0B;
+    --radius:14px;
+  }
+  *{box-sizing:border-box; margin:0; -webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{
+    background:var(--bg); color:var(--txt);
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    font-size:16px; line-height:1.45;
+    display:flex; flex-direction:column;
+    max-width:520px; margin:0 auto;
+    padding:env(safe-area-inset-top) 0 0;
+  }
+  main{flex:1; overflow-y:auto; padding:16px 16px 90px}
+
+  /* ---- entête : logo + XP ---- */
+  header{display:flex; align-items:center; gap:10px; padding:14px 16px 4px}
+  header svg{flex:none}
+  .brand{font-weight:800; letter-spacing:.14em; text-transform:uppercase; font-size:.95rem}
+  .lvl{margin-left:auto; text-align:right; font-size:.78rem; color:var(--muted)}
+  .lvl b{color:var(--txt); font-variant-numeric:tabular-nums}
+  .xpbar{height:6px; background:var(--panel-2); border-radius:3px; margin:8px 16px 0; overflow:hidden}
+  .xpbar i{display:block; height:100%; background:linear-gradient(90deg,var(--accent),#B366FF); border-radius:3px; transition:width .3s}
+  .title-lvl{padding:4px 16px 0; font-size:.75rem; color:var(--accent); letter-spacing:.06em}
+
+  h2{font-size:.72rem; text-transform:uppercase; letter-spacing:.16em; color:var(--muted); margin:22px 0 8px}
+  .card{background:var(--panel); border-radius:var(--radius); padding:4px 0; overflow:hidden}
+
+  /* ---- lignes cochables ---- */
+  .row{display:flex; align-items:center; gap:12px; padding:13px 14px; border-bottom:1px solid rgba(255,255,255,.04); cursor:pointer; user-select:none}
+  .row:last-child{border-bottom:none}
+  .chk{flex:none; width:24px; height:24px; border-radius:8px; border:2px solid var(--muted); display:grid; place-items:center; font-size:14px; color:transparent; transition:.15s}
+  .row.done .chk{background:var(--accent); border-color:var(--accent); color:#fff}
+  .row.done .name{color:var(--muted); text-decoration:line-through}
+  .name{flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .cat-dot{flex:none; width:8px; height:8px; border-radius:50%}
+  .streak{flex:none; font-size:.82rem; color:var(--warn); font-variant-numeric:tabular-nums}
+  .badge{flex:none; font-size:.68rem; background:var(--panel-2); color:var(--warn); padding:2px 7px; border-radius:99px}
+  .joker-tag{flex:none; font-size:.72rem; color:var(--accent)}
+
+  /* ---- ajout rapide ---- */
+  .quickadd{display:flex; gap:8px; margin-top:8px}
+  .quickadd input{flex:1; background:var(--panel); border:1px solid var(--panel-2); color:var(--txt); border-radius:var(--radius); padding:12px 14px; font-size:1rem; outline:none}
+  .quickadd input:focus{border-color:var(--accent)}
+
+  /* ---- clôture / victoire ---- */
+  .closure{background:var(--panel); border:1px solid var(--accent-soft); border-radius:var(--radius); padding:18px 16px; margin-top:22px; text-align:center}
+  .closure label{display:block; font-size:.8rem; color:var(--muted); margin:14px 0 4px}
+  .closure output{font-size:1.3rem}
+  input[type=range]{width:100%; accent-color:var(--accent)}
+  .victory{text-align:center; padding:52px 20px}
+  .victory .flame{font-size:56px; animation:pulse 2.2s ease-in-out infinite}
+  @keyframes pulse{50%{transform:scale(1.12); filter:brightness(1.25)}}
+  @media (prefers-reduced-motion:reduce){.victory .flame{animation:none} .xpbar i{transition:none}}
+  .victory h1{font-size:1.35rem; margin:14px 0 6px}
+  .victory p{color:var(--muted)}
+
+  /* ---- boutons ---- */
+  button{font:inherit; cursor:pointer; border:none; border-radius:var(--radius)}
+  .btn{background:var(--accent); color:#fff; padding:12px 22px; font-weight:600}
+  .btn-ghost{background:var(--panel-2); color:var(--txt); padding:9px 14px; font-size:.85rem}
+  .btn-mini{background:none; color:var(--muted); padding:4px 8px; font-size:.8rem}
+  .btn-mini:hover{color:var(--txt)}
+
+  /* ---- stats ---- */
+  .big-num{font-size:2.6rem; font-weight:800; color:var(--accent); font-variant-numeric:tabular-nums}
+  .stat-block{background:var(--panel); border-radius:var(--radius); padding:16px; margin-bottom:12px; text-align:center}
+  .stat-block small{color:var(--muted)}
+  .stat-row{display:flex; justify-content:space-between; padding:11px 14px; border-bottom:1px solid rgba(255,255,255,.04); font-size:.92rem}
+  .stat-row:last-child{border-bottom:none}
+  .stat-row span:last-child{color:var(--warn); font-variant-numeric:tabular-nums}
+
+  /* ---- réglages ---- */
+  form.mini{display:flex; flex-direction:column; gap:8px; background:var(--panel); border-radius:var(--radius); padding:14px; margin-bottom:12px}
+  form.mini input[type=text], form.mini select{background:var(--panel-2); border:none; color:var(--txt); border-radius:10px; padding:10px 12px; font-size:.95rem; outline:none}
+  .days{display:flex; gap:5px; flex-wrap:wrap}
+  .days label{flex:1; text-align:center; font-size:.72rem; background:var(--panel-2); border-radius:8px; padding:7px 0; cursor:pointer; color:var(--muted)}
+  .days input{display:none}
+  .days input:checked+span{color:var(--accent); font-weight:700}
+  .cat-line{display:flex; align-items:center; gap:10px; padding:9px 14px; border-bottom:1px solid rgba(255,255,255,.04)}
+  input[type=color]{width:30px; height:30px; border:none; background:none; padding:0; cursor:pointer}
+
+  /* ---- navigation 3 onglets ---- */
+  nav{position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:100%; max-width:520px;
+      display:flex; background:rgba(15,15,20,.92); backdrop-filter:blur(10px);
+      border-top:1px solid var(--panel-2); padding-bottom:env(safe-area-inset-bottom)}
+  nav button{flex:1; background:none; color:var(--muted); padding:12px 0 10px; font-size:.72rem; letter-spacing:.06em; border-radius:0}
+  nav button.active{color:var(--accent); font-weight:700}
+  nav button span{display:block; font-size:1.15rem; margin-bottom:2px}
+
+  .timer{position:fixed; bottom:66px; left:50%; transform:translateX(-50%); font-size:.7rem; color:var(--muted); opacity:.75}
+
+  .toast{position:fixed; top:14px; left:50%; transform:translateX(-50%); background:var(--accent); color:#fff;
+         padding:10px 18px; border-radius:99px; font-size:.85rem; font-weight:600; opacity:0; pointer-events:none;
+         transition:opacity .25s; z-index:9; white-space:nowrap}
+  .toast.show{opacity:1}
+  .empty{color:var(--muted); text-align:center; padding:28px 10px; font-size:.9rem}
+  .hidden{display:none!important}
+</style>
+</head>
+<body>
+
+<header>
+  <!-- Logo Braise : flamme minimaliste, aussi utilisé comme icône PWA dans le manifest -->
+  <svg width="30" height="30" viewBox="0 0 64 64" aria-hidden="true">
+    <rect width="64" height="64" rx="14" fill="#17171F"/>
+    <path d="M32 10c2 8-6 12-6 20a10 10 0 0 0 20 0c0-5-3-8-4-12-4 3-3 6-3 9a4 4 0 0 1-8 0c0-7 8-9 1-17z" fill="#7A00E6"/>
+    <ellipse cx="32" cy="50" rx="11" ry="3" fill="#7A00E6" opacity=".35"/>
+  </svg>
+  <span class="brand">Braise</span>
+  <span class="lvl">Niveau <b id="lvlNum">1</b><br><span id="xpTxt">0 XP</span></span>
+</header>
+<div class="xpbar"><i id="xpFill" style="width:0%"></i></div>
+<div class="title-lvl" id="lvlTitle"></div>
+
+<main id="view"></main>
+
+<div class="timer" id="appTimer">⏱ 0 min dans l'app aujourd'hui</div>
+<div class="toast" id="toast"></div>
+
+<nav>
+  <button data-tab="today" class="active"><span>🔥</span>Aujourd'hui</button>
+  <button data-tab="stats"><span>📊</span>Stats</button>
+  <button data-tab="settings"><span>⚙️</span>Réglages</button>
+</nav>
+
+<script>
+"use strict";
+/* ================= DONNÉES ================= */
+const KEY = "braise_v1";
+const TITLES = ["Étincelle","Apprenti discipliné","Allumeur de braises","Régulier du matin",
+  "Machine à cocher","Moine du Pomodoro","Gardien de la flamme","Forgeron d'habitudes",
+  "Braise éternelle","Légende incandescente"];
+
+let D = load();
+
+function load(){
+  try{ const d = JSON.parse(localStorage.getItem(KEY)); if(d && d.meta) return d; }catch(e){}
+  return {
+    meta:{ version:1, xp:0, level:1, lastJokerWeek:null, appTime:{date:null, seconds:0} },
+    habits:[], tasks:[],
+    categories:[
+      {id:"perso",  name:"Perso",  color:"#7A00E6"},
+      {id:"sante",  name:"Santé",  color:"#22C55E"},
+      {id:"travail",name:"Travail",color:"#F59E0B"}
+    ],
+    history:{}
+  };
+}
+const save = () => localStorage.setItem(KEY, JSON.stringify(D));
+
+/* ================= DATES ================= */
+const pad = n => String(n).padStart(2,"0");
+const dkey = d => d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+const today = () => dkey(new Date());
+function addDays(k, n){ const [y,m,d] = k.split("-").map(Number); const dt = new Date(y, m-1, d+n); return dkey(dt); }
+function dayOfWeek(k){ const [y,m,d] = k.split("-").map(Number); return new Date(y, m-1, d).getDay(); }
+// Lundi de la semaine courante — sert de clé pour la remise à zéro hebdomadaire des jokers
+function mondayKey(d){ const x = new Date(d); const diff = (x.getDay()+6)%7; x.setDate(x.getDate()-diff); return dkey(x); }
+
+function histFor(k){
+  if(!D.history[k]) D.history[k] = { completedHabits:[], completedTasks:[], jokeredHabits:[], mood:null, energy:null, xpEarned:0 };
+  if(!D.history[k].jokeredHabits) D.history[k].jokeredHabits = []; // extension du schéma pour tracer les jokers
+  return D.history[k];
+}
+
+/* Une habitude est-elle prévue tel jour ? */
+function isDue(h, k){
+  if(h.archived) return false;
+  if(h.createdAt && k < h.createdAt) return false;
+  if(h.schedule.type === "daily") return true;
+  return (h.schedule.days || []).includes(dayOfWeek(k)); // weekdays et weekly : mêmes règles, jours cochés
+}
+
+/* ================= ROLLOVER (au chargement) ================= */
+function rollover(){
+  const T = today();
+
+  // 1. Report des tâches non faites : date -> aujourd'hui, compteur "reportée ×N"
+  D.tasks.forEach(t => { if(!t.done && t.date < T){ t.date = T; t.postponedCount++; } });
+  // Purge des tâches faites vieilles de +60 jours (l'historique garde la trace)
+  D.tasks = D.tasks.filter(t => !(t.done && t.date < addDays(T,-60)));
+
+  // 2. Remise à zéro hebdomadaire des jokers (chaque lundi)
+  const wk = mondayKey(new Date());
+  if(D.meta.lastJokerWeek !== wk){
+    D.meta.lastJokerWeek = wk;
+    D.habits.forEach(h => h.jokerUsedThisWeek = false);
+  }
+
+  /* 3. Audit des streaks.
+     Pour chaque habitude, on parcourt les jours PLANIFIÉS depuis le dernier audit
+     jusqu'à hier. Jour planifié non coché :
+       - joker hebdo disponible -> consommé automatiquement, streak sauvé (façon
+         "streak freeze" Duolingo), le jour est marqué dans history.jokeredHabits ;
+       - sinon -> streak remis à 0.
+     Le streak stocké reste ainsi cohérent avec l'historique, source de vérité. */
+  const from = D.meta.lastAudit || T;
+  for(let k = from; k < T; k = addDays(k,1)){
+    D.habits.forEach(h => {
+      if(!isDue(h,k)) return;
+      const H = histFor(k);
+      if(H.completedHabits.includes(h.id) || H.jokeredHabits.includes(h.id)) return;
+      if(h.streak > 0 && !h.jokerUsedThisWeek){
+        h.jokerUsedThisWeek = true;
+        H.jokeredHabits.push(h.id);
+        toast("🃏 Joker utilisé : streak « "+h.name+" » sauvé");
+      } else {
+        h.streak = 0;
+      }
+    });
+  }
+  D.meta.lastAudit = T;
+
+  // 4. Compteur de temps dans l'app : remise à zéro si nouveau jour
+  if(D.meta.appTime.date !== T){ D.meta.appTime = { date:T, seconds:0 }; }
+  save();
+}
+
+/* ================= XP & NIVEAUX ================= */
+const multiplier = s => s <= 7 ? 1 : s <= 30 ? 1.5 : 2;
+// Seuil cumulé du niveau N : 100 × N^1.5 XP
+const xpForLevel = n => Math.round(100 * Math.pow(n, 1.5));
+function levelFromXp(xp){ let n = 1; while(xp >= xpForLevel(n)) n++; return n; }
+const titleFor = lvl => TITLES[Math.min(lvl-1, TITLES.length-1)];
+
+function addXp(delta){
+  const before = D.meta.level;
+  D.meta.xp = Math.max(0, D.meta.xp + delta);
+  histFor(today()).xpEarned += delta;
+  D.meta.level = levelFromXp(D.meta.xp);
+  if(D.meta.level > before) toast("⬆️ Niveau "+D.meta.level+" — "+titleFor(D.meta.level)+" !");
+  renderXpBar();
+}
+function renderXpBar(){
+  const lvl = D.meta.level;
+  const lo = lvl === 1 ? 0 : xpForLevel(lvl-1);
+  const hi = xpForLevel(lvl);
+  const pct = Math.min(100, Math.round((D.meta.xp - lo) / (hi - lo) * 100));
+  document.getElementById("lvlNum").textContent = lvl;
+  document.getElementById("xpTxt").textContent = D.meta.xp+" / "+hi+" XP";
+  document.getElementById("xpFill").style.width = pct+"%";
+  document.getElementById("lvlTitle").textContent = titleFor(lvl);
+}
+
+/* ================= ACTIONS ================= */
+const uid = p => p+"_"+Date.now().toString(36)+Math.random().toString(36).slice(2,5);
+const catOf = id => D.categories.find(c => c.id === id) || {color:"#8A8A97", name:"?"};
+
+function toggleHabit(id){
+  const h = D.habits.find(x => x.id === id);
+  const H = histFor(today());
+  const i = H.completedHabits.indexOf(id);
+  if(i >= 0){
+    // décocher : on retire exactement l'XP qui avait été gagnée (même multiplicateur)
+    H.completedHabits.splice(i,1);
+    addXp(-Math.round(10 * multiplier(h.streak)));
+    h.streak = Math.max(0, h.streak - 1);
+  } else {
+    h.streak++;
+    h.bestStreak = Math.max(h.bestStreak || 0, h.streak);
+    H.completedHabits.push(id);
+    addXp(Math.round(10 * multiplier(h.streak)));
+  }
+  save(); renderToday();
+}
+
+function toggleTask(id){
+  const t = D.tasks.find(x => x.id === id);
+  const H = histFor(today());
+  t.done = !t.done;
+  if(t.done){ H.completedTasks.push(id); addXp(10); }
+  else{ H.completedTasks = H.completedTasks.filter(x => x !== id); addXp(-10); }
+  save(); renderToday();
+}
+
+function addTask(name){
+  D.tasks.push({ id:uid("t"), name, date:today(), done:false, postponedCount:0 });
+  save(); renderToday();
+}
+
+/* ================= VUE : AUJOURD'HUI ================= */
+const view = document.getElementById("view");
+const esc = s => s.replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+function renderToday(){
+  const T = today(), H = histFor(T);
+  const due = D.habits.filter(h => isDue(h, T));
+  const tasks = D.tasks.filter(t => t.date === T);
+  const allDone = (due.length + tasks.length) > 0 &&
+                  due.every(h => H.completedHabits.includes(h.id)) &&
+                  tasks.every(t => t.done);
+
+  const dateLabel = new Date().toLocaleDateString("fr-FR", {weekday:"long", day:"numeric", month:"long"});
+  let html = `<h2>${dateLabel}</h2>`;
+
+  if(allDone && H.mood !== null){
+    html += `<div class="victory"><div class="flame">🔥</div>
+      <h1>Journée pliée.</h1><p>Va vivre. L'app te retrouve demain matin.</p>
+      <p style="margin-top:14px">+${H.xpEarned} XP aujourd'hui</p></div>`;
+    view.innerHTML = html; return;
+  }
+
+  // Habitudes du jour
+  html += `<h2>Habitudes</h2><div class="card">`;
+  if(due.length === 0) html += `<div class="empty">Aucune habitude prévue aujourd'hui.<br>Ajoute-en dans ⚙️ Réglages.</div>`;
+  due.forEach(h => {
+    const done = H.completedHabits.includes(h.id);
+    const jok = H.jokeredHabits.includes(h.id);
+    html += `<div class="row ${done?"done":""}" onclick="toggleHabit('${h.id}')">
+      <span class="chk">✓</span>
+      <span class="cat-dot" style="background:${catOf(h.category).color}"></span>
+      <span class="name">${esc(h.name)}</span>
+      ${jok?`<span class="joker-tag">🃏</span>`:""}
+      <span class="streak">🔥 ${h.streak}</span></div>`;
+  });
+  html += `</div>`;
+
+  // Tâches du jour
+  html += `<h2>Tâches du jour</h2><div class="card">`;
+  if(tasks.length === 0) html += `<div class="empty">Rien de ponctuel aujourd'hui.</div>`;
+  tasks.forEach(t => {
+    html += `<div class="row ${t.done?"done":""}" onclick="toggleTask('${t.id}')">
+      <span class="chk">✓</span><span class="name">${esc(t.name)}</span>
+      ${t.postponedCount>0?`<span class="badge">reportée ×${t.postponedCount}</span>`:""}</div>`;
+  });
+  html += `</div>
+    <div class="quickadd"><input id="newTask" type="text" placeholder="+ Ajouter une tâche, puis Entrée" enterkeyhint="done"></div>`;
+
+  // Clôture de journée : tout est coché mais humeur/énergie pas encore saisies
+  if(allDone && H.mood === null){
+    html += `<div class="closure">
+      <strong>Tout est coché 👏 — clôture en 5 secondes</strong>
+      <label>Humeur <output id="moodOut">😐</output></label>
+      <input type="range" id="mood" min="1" max="5" value="3">
+      <label>Énergie <output id="energyOut">🔋🔋🔋</output></label>
+      <input type="range" id="energy" min="1" max="5" value="3">
+      <button class="btn" style="margin-top:16px" onclick="closeDay()">Clôturer la journée</button>
+    </div>`;
+  }
+  view.innerHTML = html;
+
+  const inp = document.getElementById("newTask");
+  if(inp) inp.addEventListener("keydown", e => {
+    if(e.key === "Enter" && inp.value.trim()){ addTask(inp.value.trim()); }
+  });
+  const moods = ["😞","🙁","😐","🙂","😄"];
+  const m = document.getElementById("mood"), en = document.getElementById("energy");
+  if(m){
+    m.oninput = () => document.getElementById("moodOut").textContent = moods[m.value-1];
+    en.oninput = () => document.getElementById("energyOut").textContent = "🔋".repeat(en.value);
+  }
+}
+
+function closeDay(){
+  const H = histFor(today());
+  H.mood = +document.getElementById("mood").value;
+  H.energy = +document.getElementById("energy").value;
+  save(); renderToday();
+}
+
+/* ================= VUE : STATS (V1) ================= */
+function renderStats(){
+  // Taux de complétion des habitudes sur les 7 derniers jours
+  // (dénominateur = jours planifiés d'après les schedules actuels)
+  let due = 0, done = 0;
+  for(let i = 6; i >= 0; i--){
+    const k = addDays(today(), -i);
+    const H = D.history[k];
+    D.habits.forEach(h => {
+      if(isDue(h,k)){ due++; if(H && (H.completedHabits.includes(h.id) || (H.jokeredHabits||[]).includes(h.id))) done++; }
+    });
+  }
+  const rate = due ? Math.round(done/due*100) : 0;
+
+  let html = `<h2>7 derniers jours</h2>
+    <div class="stat-block"><div class="big-num">${rate}%</div><small>de complétion des habitudes (${done}/${due})</small></div>
+    <h2>Streaks</h2><div class="card">`;
+  const act = D.habits.filter(h => !h.archived);
+  if(act.length === 0) html += `<div class="empty">Aucune habitude encore.</div>`;
+  act.forEach(h => {
+    html += `<div class="stat-row"><span>${esc(h.name)}</span><span>🔥 ${h.streak} <small style="color:var(--muted)">/ record ${h.bestStreak||0}</small></span></div>`;
+  });
+  html += `</div>
+    <p class="empty" style="font-size:.78rem">V2 à venir : heatmap annuelle · corrélations humeur/énergie × complétion</p>`;
+  // TODO V2 : heatmap 365 jours en CSS Grid à partir de D.history
+  // TODO V2 : double courbe énergie/complétion sur 30 jours (Chart.js en CDN, seule dépendance tolérée)
+  view.innerHTML = html;
+}
+
+/* ================= VUE : RÉGLAGES ================= */
+const DAY_NAMES = ["D","L","M","M","J","V","S"];
+
+function renderSettings(){
+  let html = `<h2>Nouvelle habitude</h2>
+  <form class="mini" onsubmit="return submitHabit(event)">
+    <input type="text" id="hName" placeholder="Nom de l'habitude" required>
+    <select id="hCat">${D.categories.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join("")}</select>
+    <select id="hType" onchange="document.getElementById('hDays').classList.toggle('hidden', this.value==='daily')">
+      <option value="daily">Tous les jours</option>
+      <option value="weekdays">Certains jours</option>
+      <option value="weekly">Hebdomadaire (jour fixe)</option>
+    </select>
+    <div class="days hidden" id="hDays">
+      ${[1,2,3,4,5,6,0].map(d=>`<label><input type="checkbox" value="${d}"><span>${DAY_NAMES[d]}</span></label>`).join("")}
+    </div>
+    <button class="btn-ghost" type="submit">Ajouter l'habitude</button>
+  </form>
+
+  <h2>Mes habitudes</h2><div class="card">`;
+  const act = D.habits.filter(h => !h.archived);
+  if(act.length === 0) html += `<div class="empty">Aucune habitude.</div>`;
+  act.forEach(h => {
+    html += `<div class="cat-line">
+      <span class="cat-dot" style="background:${catOf(h.category).color}"></span>
+      <span class="name" style="flex:1">${esc(h.name)}</span>
+      <button class="btn-mini" onclick="archiveHabit('${h.id}')">Archiver</button>
+      <button class="btn-mini" onclick="deleteHabit('${h.id}')">✕</button></div>`;
+  });
+  html += `</div>
+
+  <h2>Catégories</h2><div class="card">`;
+  D.categories.forEach(c => {
+    html += `<div class="cat-line">
+      <input type="color" value="${c.color}" onchange="editCatColor('${c.id}', this.value)">
+      <span class="name" style="flex:1">${esc(c.name)}</span>
+      <button class="btn-mini" onclick="deleteCat('${c.id}')">✕</button></div>`;
+  });
+  html += `</div>
+  <form class="mini" onsubmit="return submitCat(event)" style="margin-top:8px">
+    <div style="display:flex; gap:8px">
+      <input type="text" id="cName" placeholder="Nouvelle catégorie" required style="flex:1">
+      <input type="color" id="cColor" value="#7A00E6">
+    </div>
+    <button class="btn-ghost" type="submit">Ajouter la catégorie</button>
+  </form>
+
+  <h2>Sauvegarde</h2>
+  <div class="card" style="padding:14px; display:flex; gap:10px">
+    <button class="btn-ghost" style="flex:1" onclick="exportJson()">⬇️ Exporter (JSON)</button>
+    <button class="btn-ghost" style="flex:1" onclick="document.getElementById('importFile').click()">⬆️ Importer</button>
+    <input type="file" id="importFile" accept=".json" class="hidden" onchange="importJson(this)">
+  </div>`;
+  view.innerHTML = html;
+}
+
+function submitHabit(e){
+  e.preventDefault();
+  const type = document.getElementById("hType").value;
+  const days = [...document.querySelectorAll("#hDays input:checked")].map(i => +i.value);
+  if(type !== "daily" && days.length === 0){ toast("Choisis au moins un jour"); return false; }
+  D.habits.push({
+    id:uid("h"), name:document.getElementById("hName").value.trim(),
+    category:document.getElementById("hCat").value,
+    schedule:{ type, days: type === "daily" ? [] : days },
+    streak:0, bestStreak:0, jokerUsedThisWeek:false, archived:false, createdAt:today()
+  });
+  save(); renderSettings(); toast("Habitude ajoutée 🔥");
+  return false;
+}
+function archiveHabit(id){ D.habits.find(h=>h.id===id).archived = true; save(); renderSettings(); }
+function deleteHabit(id){ if(confirm("Supprimer définitivement ? (l'historique est conservé)")){ D.habits = D.habits.filter(h=>h.id!==id); save(); renderSettings(); } }
+function submitCat(e){
+  e.preventDefault();
+  const name = document.getElementById("cName").value.trim();
+  D.categories.push({ id:uid("c"), name, color:document.getElementById("cColor").value });
+  save(); renderSettings();
+  return false;
+}
+function editCatColor(id,v){ D.categories.find(c=>c.id===id).color = v; save(); }
+function deleteCat(id){
+  if(D.habits.some(h=>h.category===id && !h.archived)){ toast("Catégorie utilisée par une habitude"); return; }
+  D.categories = D.categories.filter(c=>c.id!==id); save(); renderSettings();
+}
+
+function exportJson(){
+  const blob = new Blob([JSON.stringify(D, null, 2)], {type:"application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "braise-backup-"+today()+".json";
+  a.click(); URL.revokeObjectURL(a.href);
+}
+function importJson(input){
+  const f = input.files[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = () => {
+    try{
+      const d = JSON.parse(r.result);
+      if(!d.meta || !d.habits) throw 0;
+      D = d; save(); rollover(); renderXpBar(); showTab("today"); toast("Backup restauré ✓");
+    }catch(e){ toast("Fichier invalide"); }
+  };
+  r.readAsText(f);
+}
+
+/* ================= NAVIGATION ================= */
+let currentTab = "today";
+function showTab(t){
+  currentTab = t;
+  document.querySelectorAll("nav button").forEach(b => b.classList.toggle("active", b.dataset.tab === t));
+  ({today:renderToday, stats:renderStats, settings:renderSettings})[t]();
+  view.scrollTop = 0;
+}
+document.querySelectorAll("nav button").forEach(b => b.onclick = () => showTab(b.dataset.tab));
+
+/* ================= TOAST ================= */
+let toastTimer;
+function toast(msg){
+  const el = document.getElementById("toast");
+  el.textContent = msg; el.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove("show"), 2600);
+}
+
+/* ================= COMPTEUR DE TEMPS DANS L'APP ================= */
+setInterval(() => {
+  if(document.visibilityState !== "visible") return;
+  if(D.meta.appTime.date !== today()) D.meta.appTime = { date:today(), seconds:0 };
+  D.meta.appTime.seconds++;
+  if(D.meta.appTime.seconds % 15 === 0) save();
+  document.getElementById("appTimer").textContent = "⏱ "+Math.floor(D.meta.appTime.seconds/60)+" min dans l'app aujourd'hui";
+}, 1000);
+
+/* ================= DÉMARRAGE ================= */
+rollover();
+renderXpBar();
+showTab("today");
+if("serviceWorker" in navigator) navigator.serviceWorker.register("service-worker.js");
+</script>
+</body>
+</html>
