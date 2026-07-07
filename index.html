@@ -10,16 +10,27 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230F0F14'/%3E%3Cpath d='M32 10c2 8-6 12-6 20a10 10 0 0 0 20 0c0-5-3-8-4-12-4 3-3 6-3 9a4 4 0 0 1-8 0c0-7 8-9 1-17z' fill='%237A00E6'/%3E%3Cellipse cx='32' cy='50' rx='11' ry='3' fill='%237A00E6' opacity='.35'/%3E%3C/svg%3E">
 <title>Braise</title>
 <style>
+  /* MODIFIÉ (Changement 1) : palette enrichie — corail secondaire, gradient signature, ombres douces */
   :root{
     --bg:#0F0F14; --panel:#17171F; --panel-2:#1E1E29;
     --txt:#E5E5EA; --muted:#8A8A97; --accent:#7A00E6;
-    --accent-soft:rgba(122,0,230,.16); --ok:#22C55E; --warn:#F59E0B;
+    --accent-soft:rgba(122,0,230,.16);
+    --coral:#FF6B5C; --coral-soft:rgba(255,107,92,.14);
+    --ok:#22C55E; --warn:#F59E0B;
+    --grad:linear-gradient(120deg,#7A00E6 0%,#A94DFF 60%,#FF6B5C 135%);
+    --shadow:0 6px 22px rgba(0,0,0,.38), 0 1px 3px rgba(0,0,0,.45);
+    --ease:cubic-bezier(.2,.7,.3,1);
     --radius:14px;
   }
   *{box-sizing:border-box; margin:0; -webkit-tap-highlight-color:transparent}
   html,body{height:100%}
   body{
-    background:var(--bg); color:var(--txt);
+    /* MODIFIÉ (Changement 1) : deux halos très discrets (violet en haut, corail en bas) cassent l'aplat */
+    background:
+      radial-gradient(140% 55% at 50% -12%, rgba(122,0,230,.10) 0%, transparent 60%),
+      radial-gradient(90% 40% at 88% 112%, rgba(255,107,92,.05) 0%, transparent 60%),
+      var(--bg);
+    color:var(--txt);
     font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
     font-size:16px; line-height:1.45;
     display:flex; flex-direction:column;
@@ -34,23 +45,34 @@
   .brand{font-weight:800; letter-spacing:.14em; text-transform:uppercase; font-size:.95rem}
   .lvl{margin-left:auto; text-align:right; font-size:.78rem; color:var(--muted)}
   .lvl b{color:var(--txt); font-variant-numeric:tabular-nums}
-  .xpbar{height:6px; background:var(--panel-2); border-radius:3px; margin:8px 16px 0; overflow:hidden}
-  .xpbar i{display:block; height:100%; background:linear-gradient(90deg,var(--accent),#B366FF); border-radius:3px; transition:width .3s}
+  /* MODIFIÉ (Changement 1) : gradient violet→corail + lueur */
+  .xpbar{height:7px; background:var(--panel-2); border-radius:4px; margin:8px 16px 0; overflow:hidden; box-shadow:inset 0 1px 2px rgba(0,0,0,.5)}
+  .xpbar i{display:block; height:100%; background:var(--grad); border-radius:4px; transition:width .28s var(--ease); box-shadow:0 0 10px rgba(122,0,230,.55)}
   .title-lvl{padding:4px 16px 0; font-size:.75rem; color:var(--accent); letter-spacing:.06em}
 
-  h2{font-size:.72rem; text-transform:uppercase; letter-spacing:.16em; color:var(--muted); margin:22px 0 8px}
-  .card{background:var(--panel); border-radius:var(--radius); padding:4px 0; overflow:hidden}
+  h2{font-size:.72rem; text-transform:uppercase; letter-spacing:.16em; color:var(--muted); margin:26px 0 8px 2px}
+  /* NOUVEAU (Changement 1) : la date échappe au style "étiquette" pour casser la grille uniforme */
+  h2.date{font-size:1.15rem; text-transform:capitalize; letter-spacing:0; color:var(--txt); font-weight:800; margin:6px 0 2px}
+  /* MODIFIÉ (Changement 1) : relief doux — micro-gradient, bordure fine, ombre portée */
+  .card{
+    background:linear-gradient(180deg,#1B1B25 0%,var(--panel) 100%);
+    border:1px solid rgba(255,255,255,.055);
+    border-radius:var(--radius); padding:4px 0; overflow:hidden;
+    box-shadow:var(--shadow);
+  }
 
   /* ---- lignes cochables ---- */
-  .row{display:flex; align-items:center; gap:12px; padding:13px 14px; border-bottom:1px solid rgba(255,255,255,.04); cursor:pointer; user-select:none}
+  /* MODIFIÉ (Changement 1) : transitions 200-260ms, retour tactile, streak corail */
+  .row{display:flex; align-items:center; gap:12px; padding:13px 14px; border-bottom:1px solid rgba(255,255,255,.04); cursor:pointer; user-select:none; transition:background .22s var(--ease), transform .2s var(--ease)}
+  .row:active{transform:scale(.985); background:rgba(255,255,255,.03)}
   .row:last-child{border-bottom:none}
-  .chk{flex:none; width:24px; height:24px; border-radius:8px; border:2px solid var(--muted); display:grid; place-items:center; font-size:14px; color:transparent; transition:.15s}
-  .row.done .chk{background:var(--accent); border-color:var(--accent); color:#fff}
+  .chk{flex:none; width:24px; height:24px; border-radius:8px; border:2px solid var(--muted); display:grid; place-items:center; font-size:14px; color:transparent; transition:all .24s var(--ease)}
+  .row.done .chk{background:var(--accent); border-color:var(--accent); color:#fff; box-shadow:0 0 12px rgba(122,0,230,.5)}
   .row.done .name{color:var(--muted); text-decoration:line-through}
   .name{flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
-  .cat-dot{flex:none; width:8px; height:8px; border-radius:50%}
-  .streak{flex:none; font-size:.82rem; color:var(--warn); font-variant-numeric:tabular-nums}
-  .badge{flex:none; font-size:.68rem; background:var(--panel-2); color:var(--warn); padding:2px 7px; border-radius:99px}
+  .cat-dot{flex:none; width:8px; height:8px; border-radius:50%; box-shadow:0 0 6px currentColor}
+  .streak{flex:none; font-size:.82rem; color:var(--coral); font-variant-numeric:tabular-nums}
+  .badge{flex:none; font-size:.68rem; background:var(--coral-soft); color:var(--coral); padding:2px 8px; border-radius:99px}
   .joker-tag{flex:none; font-size:.72rem; color:var(--accent)}
 
   /* ---- ajout rapide ---- */
@@ -59,27 +81,65 @@
   .quickadd input:focus{border-color:var(--accent)}
 
   /* ---- clôture / victoire ---- */
-  .closure{background:var(--panel); border:1px solid var(--accent-soft); border-radius:var(--radius); padding:18px 16px; margin-top:22px; text-align:center}
+  /* MODIFIÉ (Changement 1) : bordure en gradient (technique double background) + ombre */
+  .closure{
+    background:linear-gradient(var(--panel),var(--panel)) padding-box, var(--grad) border-box;
+    border:1px solid transparent;
+    border-radius:var(--radius); padding:20px 16px; margin-top:26px; text-align:center;
+    box-shadow:var(--shadow);
+  }
   .closure label{display:block; font-size:.8rem; color:var(--muted); margin:14px 0 4px}
   .closure output{font-size:1.3rem}
   input[type=range]{width:100%; accent-color:var(--accent)}
   .victory{text-align:center; padding:52px 20px}
-  .victory .flame{font-size:56px; animation:pulse 2.2s ease-in-out infinite}
-  @keyframes pulse{50%{transform:scale(1.12); filter:brightness(1.25)}}
+  /* MODIFIÉ (Changement 1) : halo corail sous la flamme */
+  .victory .flame{font-size:60px; animation:pulse 2.2s ease-in-out infinite; filter:drop-shadow(0 6px 22px rgba(255,107,92,.45))}
+  @keyframes pulse{50%{transform:scale(1.12); filter:brightness(1.25) drop-shadow(0 6px 26px rgba(255,107,92,.6))}}
   @media (prefers-reduced-motion:reduce){.victory .flame{animation:none} .xpbar i{transition:none}}
-  .victory h1{font-size:1.35rem; margin:14px 0 6px}
+  .victory h1{font-size:1.5rem; margin:16px 0 6px; letter-spacing:-.01em}
   .victory p{color:var(--muted)}
 
   /* ---- boutons ---- */
   button{font:inherit; cursor:pointer; border:none; border-radius:var(--radius)}
-  .btn{background:var(--accent); color:#fff; padding:12px 22px; font-weight:600}
-  .btn-ghost{background:var(--panel-2); color:var(--txt); padding:9px 14px; font-size:.85rem}
+  /* MODIFIÉ (Changement 1) : gradient signature + relief + retour tactile */
+  .btn{background:var(--grad); color:#fff; padding:13px 24px; font-weight:700; box-shadow:0 4px 16px rgba(122,0,230,.35); transition:transform .2s var(--ease), box-shadow .2s var(--ease)}
+  .btn:active{transform:scale(.96); box-shadow:0 2px 8px rgba(122,0,230,.3)}
+  .btn-ghost{background:var(--panel-2); color:var(--txt); padding:9px 14px; font-size:.85rem; border:1px solid rgba(255,255,255,.05); transition:background .2s var(--ease)}
+  .btn-ghost:active{background:#262633}
   .btn-mini{background:none; color:var(--muted); padding:4px 8px; font-size:.8rem}
   .btn-mini:hover{color:var(--txt)}
 
   /* ---- stats ---- */
-  .big-num{font-size:2.6rem; font-weight:800; color:var(--accent); font-variant-numeric:tabular-nums}
-  .stat-block{background:var(--panel); border-radius:var(--radius); padding:16px; margin-bottom:12px; text-align:center}
+  /* MODIFIÉ (Changement 1) : chiffre-clé en dégradé (background-clip:text) */
+  .big-num{font-size:2.9rem; font-weight:800; background:var(--grad); -webkit-background-clip:text; background-clip:text; color:transparent; font-variant-numeric:tabular-nums}
+  .stat-block{background:linear-gradient(180deg,#1B1B25,var(--panel)); border:1px solid rgba(255,255,255,.055); border-radius:var(--radius); padding:18px 16px; margin-bottom:12px; text-align:center; box-shadow:var(--shadow)}
+
+  /* NOUVEAU (Changement 2) : écran de sélection de profil + pavé PIN */
+  body.locked header, body.locked main, body.locked nav,
+  body.locked .timer, body.locked .xpbar, body.locked .title-lvl{display:none}
+  .lock{position:fixed; inset:0; z-index:5; background:
+        radial-gradient(120% 55% at 50% -10%, rgba(122,0,230,.14) 0%, transparent 60%), var(--bg);
+        display:flex; flex-direction:column; align-items:center; justify-content:center; gap:20px; padding:24px}
+  .lock .brand{font-size:1.05rem}
+  .profiles{display:flex; flex-wrap:wrap; gap:20px; justify-content:center; max-width:340px}
+  .profile-item{text-align:center; font-size:.82rem; color:var(--muted); width:86px; cursor:pointer}
+  .avatar{width:74px; height:74px; border-radius:24px; margin:0 auto 7px; display:grid; place-items:center;
+          font-size:1.8rem; font-weight:800; color:#fff; box-shadow:var(--shadow);
+          transition:transform .2s var(--ease)}
+  .profile-item:active .avatar{transform:scale(.93)}
+  .pin-dots{display:flex; gap:16px}
+  .pin-dots i{width:14px; height:14px; border-radius:50%; border:2px solid var(--muted); transition:all .2s var(--ease)}
+  .pin-dots i.on{background:var(--accent); border-color:var(--accent); box-shadow:0 0 10px rgba(122,0,230,.6)}
+  .pin-msg{min-height:22px; color:var(--coral); font-size:.85rem}
+  .keypad{display:grid; grid-template-columns:repeat(3,74px); gap:12px}
+  .keypad button{height:64px; border-radius:20px; background:var(--panel-2); color:var(--txt);
+                 font-size:1.35rem; font-weight:600; border:1px solid rgba(255,255,255,.05);
+                 transition:transform .18s var(--ease), background .18s var(--ease)}
+  .keypad button:active{transform:scale(.92); background:#2A2A38}
+  .lock-input{background:var(--panel); border:1px solid var(--panel-2); color:var(--txt);
+              border-radius:var(--radius); padding:13px 16px; font-size:1.05rem; outline:none;
+              text-align:center; width:230px}
+  .lock-input:focus{border-color:var(--accent)}
   .stat-block small{color:var(--muted)}
   .stat-row{display:flex; justify-content:space-between; padding:11px 14px; border-bottom:1px solid rgba(255,255,255,.04); font-size:.92rem}
   .stat-row:last-child{border-bottom:none}
@@ -133,6 +193,9 @@
 <div class="timer" id="appTimer">⏱ 0 min dans l'app aujourd'hui</div>
 <div class="toast" id="toast"></div>
 
+<!-- NOUVEAU (Changement 2) : écran profils / PIN, rempli dynamiquement par renderLock() -->
+<div id="lock" class="lock hidden"></div>
+
 <nav>
   <button data-tab="today" class="active"><span>🔥</span>Aujourd'hui</button>
   <button data-tab="stats"><span>📊</span>Stats</button>
@@ -142,12 +205,15 @@
 <script>
 "use strict";
 /* ================= DONNÉES ================= */
-const KEY = "braise_v1";
+// MODIFIÉ (Changement 2) : la clé devient dynamique, préfixée par l'identifiant du profil
+// connecté ("braise_user_<id>_data"). Elle est définie par unlock() après saisie du PIN.
+let KEY = null;
 const TITLES = ["Étincelle","Apprenti discipliné","Allumeur de braises","Régulier du matin",
   "Machine à cocher","Moine du Pomodoro","Gardien de la flamme","Forgeron d'habitudes",
   "Braise éternelle","Légende incandescente"];
 
-let D = load();
+// MODIFIÉ (Changement 2) : les données ne sont plus chargées au démarrage mais par unlock()
+let D = null;
 
 function load(){
   try{ const d = JSON.parse(localStorage.getItem(KEY)); if(d && d.meta) return d; }catch(e){}
@@ -162,7 +228,8 @@ function load(){
     history:{}
   };
 }
-const save = () => localStorage.setItem(KEY, JSON.stringify(D));
+// MODIFIÉ (Changement 2) : garde-fou — pas d'écriture tant qu'aucun profil n'est déverrouillé
+const save = () => { if(KEY && D) localStorage.setItem(KEY, JSON.stringify(D)); };
 
 /* ================= DATES ================= */
 const pad = n => String(n).padStart(2,"0");
@@ -307,7 +374,8 @@ function renderToday(){
                   tasks.every(t => t.done);
 
   const dateLabel = new Date().toLocaleDateString("fr-FR", {weekday:"long", day:"numeric", month:"long"});
-  let html = `<h2>${dateLabel}</h2>`;
+  // MODIFIÉ (Changement 1) : classe .date pour le style éditorial de l'en-tête de journée
+  let html = `<h2 class="date">${dateLabel}</h2>`;
 
   if(allDone && H.mood !== null){
     html += `<div class="victory"><div class="flame">🔥</div>
@@ -407,6 +475,8 @@ function renderStats(){
 const DAY_NAMES = ["D","L","M","M","J","V","S"];
 
 function renderSettings(){
+  // MODIFIÉ (Changement 3) : quitter/rouvrir les réglages annule une édition en cours
+  editingHabitId = null;
   let html = `<h2>Nouvelle habitude</h2>
   <form class="mini" onsubmit="return submitHabit(event)">
     <input type="text" id="hName" placeholder="Nom de l'habitude" required>
@@ -419,7 +489,7 @@ function renderSettings(){
     <div class="days hidden" id="hDays">
       ${[1,2,3,4,5,6,0].map(d=>`<label><input type="checkbox" value="${d}"><span>${DAY_NAMES[d]}</span></label>`).join("")}
     </div>
-    <button class="btn-ghost" type="submit">Ajouter l'habitude</button>
+    <button class="btn-ghost" type="submit" id="hSubmitBtn">Ajouter l'habitude</button>
   </form>
 
   <h2>Mes habitudes</h2><div class="card">`;
@@ -429,6 +499,7 @@ function renderSettings(){
     html += `<div class="cat-line">
       <span class="cat-dot" style="background:${catOf(h.category).color}"></span>
       <span class="name" style="flex:1">${esc(h.name)}</span>
+      <button class="btn-mini" onclick="editHabit('${h.id}')" title="Modifier">✎</button>
       <button class="btn-mini" onclick="archiveHabit('${h.id}')">Archiver</button>
       <button class="btn-mini" onclick="deleteHabit('${h.id}')">✕</button></div>`;
   });
@@ -455,8 +526,31 @@ function renderSettings(){
     <button class="btn-ghost" style="flex:1" onclick="exportJson()">⬇️ Exporter (JSON)</button>
     <button class="btn-ghost" style="flex:1" onclick="document.getElementById('importFile').click()">⬆️ Importer</button>
     <input type="file" id="importFile" accept=".json" class="hidden" onchange="importJson(this)">
+  </div>
+
+  <h2>Profil</h2>
+  <div class="card" style="padding:14px; display:flex; gap:10px">
+    <button class="btn-ghost" style="flex:1" onclick="lockApp()">👤 Changer de profil</button>
+    <button class="btn-ghost" style="flex:1; color:var(--coral)" onclick="askDeleteProfile()">🗑 Supprimer ce profil</button>
   </div>`;
   view.innerHTML = html;
+}
+
+// NOUVEAU (Changement 3) : identifiant de l'habitude en cours d'édition (null = mode création)
+let editingHabitId = null;
+
+// NOUVEAU (Changement 3) : pré-remplit le formulaire avec les valeurs actuelles de l'habitude
+function editHabit(id){
+  const h = D.habits.find(x => x.id === id);
+  editingHabitId = id;
+  document.getElementById("hName").value = h.name;
+  document.getElementById("hCat").value = h.category;
+  document.getElementById("hType").value = h.schedule.type;
+  document.getElementById("hDays").classList.toggle("hidden", h.schedule.type === "daily");
+  document.querySelectorAll("#hDays input").forEach(i => i.checked = (h.schedule.days || []).includes(+i.value));
+  document.getElementById("hSubmitBtn").textContent = "Enregistrer les modifications";
+  document.querySelector("main").scrollTop = 0;
+  document.getElementById("hName").focus();
 }
 
 function submitHabit(e){
@@ -464,6 +558,18 @@ function submitHabit(e){
   const type = document.getElementById("hType").value;
   const days = [...document.querySelectorAll("#hDays input:checked")].map(i => +i.value);
   if(type !== "daily" && days.length === 0){ toast("Choisis au moins un jour"); return false; }
+  // MODIFIÉ (Changement 3) : en mode édition, mise à jour ciblée de name/category/schedule
+  // uniquement — streak, bestStreak, createdAt, jokerUsedThisWeek et l'historique
+  // ne sont jamais touchés, pour ne pas fausser les streaks calculés.
+  if(editingHabitId){
+    const h = D.habits.find(x => x.id === editingHabitId);
+    h.name = document.getElementById("hName").value.trim();
+    h.category = document.getElementById("hCat").value;
+    h.schedule = { type, days: type === "daily" ? [] : days };
+    editingHabitId = null;
+    save(); renderSettings(); toast("Habitude modifiée ✓");
+    return false;
+  }
   D.habits.push({
     id:uid("h"), name:document.getElementById("hName").value.trim(),
     category:document.getElementById("hCat").value,
@@ -502,6 +608,7 @@ function importJson(input){
     try{
       const d = JSON.parse(r.result);
       if(!d.meta || !d.habits) throw 0;
+      // MODIFIÉ (Changement 2) : l'import écrit dans la clé du profil connecté (KEY dynamique)
       D = d; save(); rollover(); renderXpBar(); showTab("today"); toast("Backup restauré ✓");
     }catch(e){ toast("Fichier invalide"); }
   };
@@ -530,16 +637,191 @@ function toast(msg){
 /* ================= COMPTEUR DE TEMPS DANS L'APP ================= */
 setInterval(() => {
   if(document.visibilityState !== "visible") return;
+  if(!D) return; // MODIFIÉ (Changement 2) : pas de comptage sur l'écran de profils
   if(D.meta.appTime.date !== today()) D.meta.appTime = { date:today(), seconds:0 };
   D.meta.appTime.seconds++;
   if(D.meta.appTime.seconds % 15 === 0) save();
   document.getElementById("appTimer").textContent = "⏱ "+Math.floor(D.meta.appTime.seconds/60)+" min dans l'app aujourd'hui";
 }, 1000);
 
+/* ================= NOUVEAU (Changement 2) : PROFILS MULTI-UTILISATEURS ================= */
+const PROFILES_KEY = "braise_profiles";   // registre des profils (nom, couleur, hash du PIN)
+const LEGACY_KEY   = "braise_v1";         // ancienne clé mono-utilisateur, migrée au 1er profil
+const AVATAR_COLORS = ["#7A00E6","#FF6B5C","#22C55E","#F59E0B","#3B82F6","#EC4899"];
+const lockEl = document.getElementById("lock");
+let currentProfile = null;
+let pin = { mode:null, buffer:"", profileId:null, name:null, firstEntry:null };
+
+const getProfiles  = () => JSON.parse(localStorage.getItem(PROFILES_KEY) || "[]");
+const saveProfiles = p  => localStorage.setItem(PROFILES_KEY, JSON.stringify(p));
+const dataKeyFor   = id => "braise_user_" + id + "_data";
+
+// Hachage SHA-256 du PIN (crypto.subtle, jamais stocké en clair) — même approche que LingoPilot
+async function sha256(str){
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
+  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2,"0")).join("");
+}
+
+function renderLock(){
+  const profiles = getProfiles();
+  let html = `
+    <svg width="54" height="54" viewBox="0 0 64 64" aria-hidden="true">
+      <rect width="64" height="64" rx="14" fill="#17171F"/>
+      <path d="M32 10c2 8-6 12-6 20a10 10 0 0 0 20 0c0-5-3-8-4-12-4 3-3 6-3 9a4 4 0 0 1-8 0c0-7 8-9 1-17z" fill="#7A00E6"/>
+      <ellipse cx="32" cy="50" rx="11" ry="3" fill="#7A00E6" opacity=".35"/>
+    </svg>
+    <span class="brand">Braise</span>
+    <div class="profiles">`;
+  profiles.forEach(p => {
+    html += `<div class="profile-item" onclick="openKeypad('login','${p.id}')">
+      <div class="avatar" style="background:${p.color}">${esc(p.name[0].toUpperCase())}</div>${esc(p.name)}</div>`;
+  });
+  html += `<div class="profile-item" onclick="startCreateProfile()">
+      <div class="avatar" style="background:var(--panel-2); color:var(--muted)">+</div>Créer un profil</div>
+    </div>`;
+  lockEl.innerHTML = html;
+  lockEl.classList.remove("hidden");
+  document.body.classList.add("locked");
+}
+
+function startCreateProfile(){
+  lockEl.innerHTML = `
+    <span class="brand">Nouveau profil</span>
+    <input type="text" id="pName" class="lock-input" maxlength="14" placeholder="Ton prénom" autocomplete="off">
+    <button class="btn" onclick="nameNext()">Continuer</button>
+    <button class="btn-mini" onclick="renderLock()">← Retour</button>`;
+  document.getElementById("pName").focus();
+}
+function nameNext(){
+  const n = document.getElementById("pName").value.trim();
+  if(!n){ toast("Entre un prénom"); return; }
+  pin = { mode:"create", buffer:"", name:n, firstEntry:null };
+  renderKeypad();
+}
+
+function openKeypad(mode, profileId){
+  const p = profileId ? getProfiles().find(x => x.id === profileId) : null;
+  // Verrouillage temporaire : 5 échecs -> 30 s de blocage, persisté (recharger ne le contourne pas)
+  if(mode === "login" && p.lockUntil && p.lockUntil > Date.now()){
+    toast("Profil bloqué encore " + Math.ceil((p.lockUntil - Date.now())/1000) + " s (5 échecs)");
+    return;
+  }
+  pin = { mode, buffer:"", profileId, name:null, firstEntry:null };
+  renderKeypad();
+}
+
+function renderKeypad(msg){
+  const p = pin.profileId ? getProfiles().find(x => x.id === pin.profileId) : null;
+  const titles = {
+    login:  "Code PIN — " + (p ? esc(p.name) : ""),
+    create: "Choisis un code PIN à 4 chiffres",
+    confirm:"Confirme ton code PIN",
+    delete: "Saisis le PIN pour supprimer ce profil"
+  };
+  let dots = ""; for(let i = 0; i < 4; i++) dots += `<i class="${i < pin.buffer.length ? "on" : ""}"></i>`;
+  lockEl.innerHTML = `
+    <span class="brand">${titles[pin.mode]}</span>
+    <div class="pin-dots">${dots}</div>
+    <div class="pin-msg">${msg || ""}</div>
+    <div class="keypad">
+      ${[1,2,3,4,5,6,7,8,9].map(n => `<button onclick="pressKey('${n}')">${n}</button>`).join("")}
+      <button onclick="cancelKeypad()" style="font-size:.8rem">Annuler</button>
+      <button onclick="pressKey('0')">0</button>
+      <button onclick="pressKey('back')">⌫</button>
+    </div>`;
+  lockEl.classList.remove("hidden");
+  document.body.classList.add("locked");
+}
+
+async function pressKey(k){
+  if(k === "back"){ pin.buffer = pin.buffer.slice(0,-1); renderKeypad(); return; }
+  if(pin.buffer.length >= 4) return;
+  pin.buffer += k; renderKeypad();
+  if(pin.buffer.length === 4) await handlePin();
+}
+
+function cancelKeypad(){
+  const wasDelete = pin.mode === "delete";
+  pin = { mode:null, buffer:"" };
+  if(wasDelete){ lockEl.classList.add("hidden"); document.body.classList.remove("locked"); }
+  else renderLock();
+}
+
+async function handlePin(){
+  const hash = await sha256(pin.buffer);
+  const profiles = getProfiles();
+
+  if(pin.mode === "login"){
+    const p = profiles.find(x => x.id === pin.profileId);
+    if(hash === p.pinHash){ p.failCount = 0; saveProfiles(profiles); unlock(p); }
+    else {
+      p.failCount = (p.failCount || 0) + 1;
+      if(p.failCount >= 5){
+        p.lockUntil = Date.now() + 30000; p.failCount = 0; saveProfiles(profiles);
+        renderLock(); toast("5 échecs — profil bloqué 30 secondes"); return;
+      }
+      saveProfiles(profiles);
+      pin.buffer = ""; renderKeypad("Code incorrect (" + p.failCount + "/5)");
+    }
+  }
+  else if(pin.mode === "create"){
+    // Double saisie à la création : évite d'être enfermé dehors par une faute de frappe
+    pin.firstEntry = pin.buffer; pin.buffer = ""; pin.mode = "confirm"; renderKeypad();
+  }
+  else if(pin.mode === "confirm"){
+    if(pin.buffer !== pin.firstEntry){
+      pin.mode = "create"; pin.buffer = ""; pin.firstEntry = null;
+      renderKeypad("Les codes ne correspondent pas — recommence"); return;
+    }
+    const p = { id:uid("u"), name:pin.name, color:AVATAR_COLORS[profiles.length % AVATAR_COLORS.length],
+                pinHash:hash, failCount:0, lockUntil:0, createdAt:today() };
+    profiles.push(p); saveProfiles(profiles);
+    // Migration douce : les données de l'ancienne version mono-utilisateur ("braise_v1")
+    // sont adoptées par le tout premier profil créé, puis l'ancienne clé est supprimée
+    if(profiles.length === 1 && localStorage.getItem(LEGACY_KEY)){
+      localStorage.setItem(dataKeyFor(p.id), localStorage.getItem(LEGACY_KEY));
+      localStorage.removeItem(LEGACY_KEY);
+      toast("Données existantes migrées vers ton profil ✓");
+    }
+    unlock(p);
+  }
+  else if(pin.mode === "delete"){
+    if(hash !== currentProfile.pinHash){ pin.buffer = ""; renderKeypad("Code incorrect"); return; }
+    // Second avertissement exigé avant toute suppression
+    if(confirm("Cette action est irréversible, toutes les données seront perdues.\nSupprimer le profil « " + currentProfile.name + " » ?")){
+      localStorage.removeItem(dataKeyFor(currentProfile.id));
+      saveProfiles(getProfiles().filter(x => x.id !== currentProfile.id));
+      currentProfile = null; D = null; KEY = null;
+      pin = { mode:null, buffer:"" };
+      renderLock(); toast("Profil supprimé");
+    } else { cancelKeypad(); }
+  }
+}
+
+function unlock(p){
+  currentProfile = p;
+  KEY = dataKeyFor(p.id);
+  D = load();
+  lockEl.classList.add("hidden");
+  document.body.classList.remove("locked");
+  rollover(); renderXpBar(); showTab("today");
+}
+
+function lockApp(){
+  if(D) save();
+  currentProfile = null; D = null; KEY = null;
+  renderLock();
+}
+
+function askDeleteProfile(){
+  pin = { mode:"delete", buffer:"" };
+  renderKeypad();
+}
+
 /* ================= DÉMARRAGE ================= */
-rollover();
-renderXpBar();
-showTab("today");
+// MODIFIÉ (Changement 2) : l'app démarre verrouillée sur l'écran de profils ;
+// rollover + rendu sont désormais déclenchés par unlock() après saisie du PIN.
+renderLock();
 if("serviceWorker" in navigator) navigator.serviceWorker.register("service-worker.js");
 </script>
 </body>
