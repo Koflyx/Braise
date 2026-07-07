@@ -140,6 +140,16 @@
               border-radius:var(--radius); padding:13px 16px; font-size:1.05rem; outline:none;
               text-align:center; width:230px}
   .lock-input:focus{border-color:var(--accent)}
+
+  /* NOUVEAU (Suggestions) : lignes du catalogue d'habitudes suggérées */
+  .sugg{cursor:pointer}
+  .sugg input{display:none}
+  .sugg input:checked ~ .chk{background:var(--accent); border-color:var(--accent); color:#fff; box-shadow:0 0 12px rgba(122,0,230,.5)}
+  .sugg .name, .row .name.wrap{white-space:normal; line-height:1.3}
+  .sugg .name small, .row .name small{display:block; color:var(--muted); font-size:.74rem; font-weight:400}
+  .sugg-badge{flex:none; font-size:.64rem; background:var(--accent-soft); color:#B980FF; padding:2px 8px; border-radius:99px; letter-spacing:.04em}
+  .reassign-panel{background:var(--coral-soft); padding:12px 14px; display:flex; flex-direction:column; gap:8px; font-size:.85rem}
+  .reassign-panel select{background:var(--panel-2); border:none; color:var(--txt); border-radius:10px; padding:9px 12px; font-size:.9rem}
   .stat-block small{color:var(--muted)}
   .stat-row{display:flex; justify-content:space-between; padding:11px 14px; border-bottom:1px solid rgba(255,255,255,.04); font-size:.92rem}
   .stat-row:last-child{border-bottom:none}
@@ -251,6 +261,9 @@ function isDue(h, k){
   if(h.archived) return false;
   if(h.createdAt && k < h.createdAt) return false;
   if(h.schedule.type === "daily") return true;
+  // NOUVEAU (Suggestions) : type "monthly" — prévue le jour du mois indiqué (défaut : le 1er).
+  // Extension minimale du schéma, nécessaire pour les suggestions mensuelles (revue budget/portefeuille).
+  if(h.schedule.type === "monthly") return +k.split("-")[2] === (h.schedule.days[0] || 1);
   return (h.schedule.days || []).includes(dayOfWeek(k)); // weekdays et weekly : mêmes règles, jours cochés
 }
 
@@ -475,22 +488,26 @@ function renderStats(){
 const DAY_NAMES = ["D","L","M","M","J","V","S"];
 
 function renderSettings(){
-  // MODIFIÉ (Changement 3) : quitter/rouvrir les réglages annule une édition en cours
+  // MODIFIÉ (Changement 3 précédent) : quitter/rouvrir les réglages annule une édition en cours
   editingHabitId = null;
+  editingCatId = null; // NOUVEAU (Édition catégories) : même règle pour les catégories
+  // MODIFIÉ (Suggestions) : option "Mensuel" dans le sélecteur + bouton d'accès au catalogue de suggestions
   let html = `<h2>Nouvelle habitude</h2>
   <form class="mini" onsubmit="return submitHabit(event)">
     <input type="text" id="hName" placeholder="Nom de l'habitude" required>
     <select id="hCat">${D.categories.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join("")}</select>
-    <select id="hType" onchange="document.getElementById('hDays').classList.toggle('hidden', this.value==='daily')">
+    <select id="hType" onchange="document.getElementById('hDays').classList.toggle('hidden', this.value==='daily'||this.value==='monthly')">
       <option value="daily">Tous les jours</option>
       <option value="weekdays">Certains jours</option>
       <option value="weekly">Hebdomadaire (jour fixe)</option>
+      <option value="monthly">Mensuel (le 1er du mois)</option>
     </select>
     <div class="days hidden" id="hDays">
       ${[1,2,3,4,5,6,0].map(d=>`<label><input type="checkbox" value="${d}"><span>${DAY_NAMES[d]}</span></label>`).join("")}
     </div>
     <button class="btn-ghost" type="submit" id="hSubmitBtn">Ajouter l'habitude</button>
   </form>
+  <button class="btn-ghost" style="width:100%; margin-bottom:4px" onclick="renderSuggestions()">💡 Suggestions d'habitudes</button>
 
   <h2>Mes habitudes</h2><div class="card">`;
   const act = D.habits.filter(h => !h.archived);
@@ -507,10 +524,23 @@ function renderSettings(){
 
   <h2>Catégories</h2><div class="card">`;
   D.categories.forEach(c => {
+    // MODIFIÉ (Édition catégories) : bouton ✎ ajouté ; panneau de réassignation si suppression bloquée
     html += `<div class="cat-line">
       <input type="color" value="${c.color}" onchange="editCatColor('${c.id}', this.value)">
       <span class="name" style="flex:1">${esc(c.name)}</span>
+      <button class="btn-mini" onclick="editCat('${c.id}')" title="Modifier">✎</button>
       <button class="btn-mini" onclick="deleteCat('${c.id}')">✕</button></div>`;
+    if(reassigningCatId === c.id){
+      const others = D.categories.filter(x => x.id !== c.id);
+      const n = D.habits.filter(h => h.category === c.id).length;
+      html += `<div class="reassign-panel">
+        <span>⚠️ ${n} habitude(s) rattachée(s) à « ${esc(c.name)} ». Réassigner vers :</span>
+        <select id="reassignTo">${others.map(o=>`<option value="${o.id}">${esc(o.name)}</option>`).join("")}</select>
+        <div style="display:flex; gap:8px">
+          <button class="btn-ghost" style="flex:1" onclick="confirmReassign('${c.id}')">Réassigner et supprimer</button>
+          <button class="btn-ghost" style="flex:1" onclick="cancelReassign()">Annuler</button>
+        </div></div>`;
+    }
   });
   html += `</div>
   <form class="mini" onsubmit="return submitCat(event)" style="margin-top:8px">
@@ -518,7 +548,7 @@ function renderSettings(){
       <input type="text" id="cName" placeholder="Nouvelle catégorie" required style="flex:1">
       <input type="color" id="cColor" value="#7A00E6">
     </div>
-    <button class="btn-ghost" type="submit">Ajouter la catégorie</button>
+    <button class="btn-ghost" type="submit" id="cSubmitBtn">Ajouter la catégorie</button>
   </form>
 
   <h2>Sauvegarde</h2>
@@ -546,7 +576,8 @@ function editHabit(id){
   document.getElementById("hName").value = h.name;
   document.getElementById("hCat").value = h.category;
   document.getElementById("hType").value = h.schedule.type;
-  document.getElementById("hDays").classList.toggle("hidden", h.schedule.type === "daily");
+  // MODIFIÉ (Suggestions) : le sélecteur de jours reste masqué aussi pour le type mensuel
+  document.getElementById("hDays").classList.toggle("hidden", h.schedule.type === "daily" || h.schedule.type === "monthly");
   document.querySelectorAll("#hDays input").forEach(i => i.checked = (h.schedule.days || []).includes(+i.value));
   document.getElementById("hSubmitBtn").textContent = "Enregistrer les modifications";
   document.querySelector("main").scrollTop = 0;
@@ -557,7 +588,10 @@ function submitHabit(e){
   e.preventDefault();
   const type = document.getElementById("hType").value;
   const days = [...document.querySelectorAll("#hDays input:checked")].map(i => +i.value);
-  if(type !== "daily" && days.length === 0){ toast("Choisis au moins un jour"); return false; }
+  // MODIFIÉ (Suggestions) : la validation des jours ne concerne que weekdays/weekly ;
+  // monthly stocke [1] (le 1er du mois), daily stocke []
+  if((type === "weekdays" || type === "weekly") && days.length === 0){ toast("Choisis au moins un jour"); return false; }
+  const schedule = { type, days: type === "daily" ? [] : type === "monthly" ? [1] : days };
   // MODIFIÉ (Changement 3) : en mode édition, mise à jour ciblée de name/category/schedule
   // uniquement — streak, bestStreak, createdAt, jokerUsedThisWeek et l'historique
   // ne sont jamais touchés, pour ne pas fausser les streaks calculés.
@@ -565,7 +599,7 @@ function submitHabit(e){
     const h = D.habits.find(x => x.id === editingHabitId);
     h.name = document.getElementById("hName").value.trim();
     h.category = document.getElementById("hCat").value;
-    h.schedule = { type, days: type === "daily" ? [] : days };
+    h.schedule = schedule; // MODIFIÉ (Suggestions) : schedule calculé plus haut (gère monthly)
     editingHabitId = null;
     save(); renderSettings(); toast("Habitude modifiée ✓");
     return false;
@@ -573,7 +607,7 @@ function submitHabit(e){
   D.habits.push({
     id:uid("h"), name:document.getElementById("hName").value.trim(),
     category:document.getElementById("hCat").value,
-    schedule:{ type, days: type === "daily" ? [] : days },
+    schedule, // MODIFIÉ (Suggestions) : schedule calculé plus haut (gère monthly)
     streak:0, bestStreak:0, jokerUsedThisWeek:false, archived:false, createdAt:today()
   });
   save(); renderSettings(); toast("Habitude ajoutée 🔥");
@@ -581,18 +615,62 @@ function submitHabit(e){
 }
 function archiveHabit(id){ D.habits.find(h=>h.id===id).archived = true; save(); renderSettings(); }
 function deleteHabit(id){ if(confirm("Supprimer définitivement ? (l'historique est conservé)")){ D.habits = D.habits.filter(h=>h.id!==id); save(); renderSettings(); } }
+// NOUVEAU (Édition catégories) : identifiants d'état — catégorie en cours d'édition / de réassignation
+let editingCatId = null;
+let reassigningCatId = null;
+
+// NOUVEAU (Édition catégories) : pré-remplit le formulaire catégorie (nom + couleur)
+function editCat(id){
+  const c = D.categories.find(x => x.id === id);
+  editingCatId = id;
+  document.getElementById("cName").value = c.name;
+  document.getElementById("cColor").value = c.color;
+  document.getElementById("cSubmitBtn").textContent = "Enregistrer la catégorie";
+  document.getElementById("cName").focus();
+}
+
 function submitCat(e){
   e.preventDefault();
   const name = document.getElementById("cName").value.trim();
+  // MODIFIÉ (Édition catégories) : en mode édition, seule l'apparence (nom/couleur) change —
+  // les habitudes gardent leur categoryId, l'affichage se met à jour partout ;
+  // aucune donnée d'historique ni de streak n'est affectée.
+  if(editingCatId){
+    const c = D.categories.find(x => x.id === editingCatId);
+    c.name = name;
+    c.color = document.getElementById("cColor").value;
+    editingCatId = null;
+    save(); renderSettings(); toast("Catégorie modifiée ✓");
+    return false;
+  }
   D.categories.push({ id:uid("c"), name, color:document.getElementById("cColor").value });
   save(); renderSettings();
   return false;
 }
 function editCatColor(id,v){ D.categories.find(c=>c.id===id).color = v; save(); }
+// MODIFIÉ (Édition catégories) : plus de blocage sec — si des habitudes sont rattachées,
+// un panneau propose de les réassigner vers une autre catégorie ou d'annuler
+// (jamais de suppression en cascade silencieuse).
 function deleteCat(id){
-  if(D.habits.some(h=>h.category===id && !h.archived)){ toast("Catégorie utilisée par une habitude"); return; }
+  const used = D.habits.filter(h => h.category === id).length;
+  if(used > 0){
+    if(D.categories.length < 2){ toast("Crée d'abord une autre catégorie pour réassigner"); return; }
+    reassigningCatId = id;
+    renderSettings();
+    return;
+  }
   D.categories = D.categories.filter(c=>c.id!==id); save(); renderSettings();
 }
+// NOUVEAU (Édition catégories) : réassigne les habitudes puis supprime la catégorie
+function confirmReassign(id){
+  const target = document.getElementById("reassignTo").value;
+  D.habits.forEach(h => { if(h.category === id) h.category = target; });
+  D.categories = D.categories.filter(c => c.id !== id);
+  reassigningCatId = null;
+  save(); renderSettings(); toast("Habitudes réassignées, catégorie supprimée ✓");
+}
+// NOUVEAU (Édition catégories)
+function cancelReassign(){ reassigningCatId = null; renderSettings(); }
 
 function exportJson(){
   const blob = new Blob([JSON.stringify(D, null, 2)], {type:"application/json"});
@@ -643,6 +721,102 @@ setInterval(() => {
   if(D.meta.appTime.seconds % 15 === 0) save();
   document.getElementById("appTimer").textContent = "⏱ "+Math.floor(D.meta.appTime.seconds/60)+" min dans l'app aujourd'hui";
 }, 1000);
+
+/* ================= NOUVEAU (Suggestions) : CATALOGUE D'HABITUDES SUGGÉRÉES ================= */
+// Catégories du catalogue : créées à la volée uniquement si l'utilisateur ajoute une
+// habitude qui en dépend (jamais d'ajout automatique). Couleurs issues de la charte.
+const SUGGESTED_CATEGORIES = [
+  { id:"sugg_corps",    name:"Corps & santé",                color:"#22C55E" },
+  { id:"sugg_carriere", name:"Carrière & compétences",       color:"#7A00E6" },
+  { id:"sugg_finances", name:"Finances",                     color:"#F59E0B" },
+  { id:"sugg_numerique",name:"Discipline numérique",         color:"#FF6B5C" },
+  { id:"sugg_mental",   name:"Mental, social & créativité",  color:"#3B82F6" }
+];
+// Chaque suggestion devient, une fois ajoutée, une habitude 100% normale
+// (modifiable/supprimable via editHabit/deleteHabit existants, sans distinction).
+const SUGGESTED_HABITS = [
+  { cat:"sugg_corps", name:"Protéines au réveil",        desc:"25-30 g de protéines au petit-déjeuner",          schedule:{type:"daily",days:[]} },
+  { cat:"sugg_corps", name:"10 000 pas",                 desc:"Marche quotidienne",                              schedule:{type:"daily",days:[]} },
+  { cat:"sugg_corps", name:"Coucher à heure fixe",       desc:"Fenêtre de sommeil constante",                    schedule:{type:"daily",days:[]} },
+  { cat:"sugg_corps", name:"Mobilité 10 min",            desc:"Routine hanches/épaules/dos",                     schedule:{type:"daily",days:[]} },
+  { cat:"sugg_corps", name:"2 L d'eau",                  desc:"Hydratation répartie sur la journée",             schedule:{type:"daily",days:[]} },
+  { cat:"sugg_corps", name:"Programme structuré",        desc:"Musculation progressive, 3x/semaine (jours modifiables)", schedule:{type:"weekdays",days:[1,3,5]} },
+  { cat:"sugg_corps", name:"Séance zone 2",              desc:"Cardio à intensité conversationnelle, 40 min",    schedule:{type:"weekly",days:[6]} },
+  { cat:"sugg_corps", name:"Préparation repas",          desc:"Batch cooking du dimanche",                       schedule:{type:"weekly",days:[0]} },
+
+  { cat:"sugg_carriere", name:"Anglais pharma 20 min",   desc:"Vocabulaire GMP/qualité",                         schedule:{type:"daily",days:[]} },
+  { cat:"sugg_carriere", name:"Veille métier 15 min",    desc:"Lecture ciblée chronométrée",                     schedule:{type:"daily",days:[]} },
+  { cat:"sugg_carriere", name:"Certification Lean Six Sigma", desc:"Préparation certification, 3-4 h/semaine",   schedule:{type:"weekly",days:[6]} },
+  { cat:"sugg_carriere", name:"Post LinkedIn",           desc:"Visibilité recruteurs — tous les 14 jours (coche 1 semaine sur 2)", schedule:{type:"weekly",days:[5]} },
+  { cat:"sugg_carriere", name:"Python pour la qualité",  desc:"Pandas et analyse qualité, 2x/semaine",           schedule:{type:"weekdays",days:[2,4]} },
+  { cat:"sugg_carriere", name:"Café réseau",             desc:"Échange avec un autre service",                   schedule:{type:"weekly",days:[4]} },
+
+  { cat:"sugg_finances", name:"Zéro achat impulsif <24h",desc:"Règle de délai avant tout achat non planifié",    schedule:{type:"daily",days:[]} },
+  { cat:"sugg_finances", name:"Revue portefeuille",      desc:"Consultation limitée à 1x/mois",                  schedule:{type:"monthly",days:[1]} },
+  { cat:"sugg_finances", name:"Revue budget",            desc:"Comparaison dépenses vs prévu",                   schedule:{type:"monthly",days:[1]} },
+
+  { cat:"sugg_numerique", name:"Téléphone hors chambre", desc:"Charge dans une autre pièce",                     schedule:{type:"daily",days:[]} },
+  { cat:"sugg_numerique", name:"Écran en niveaux de gris", desc:"Réduction de l'attrait visuel",                 schedule:{type:"daily",days:[]} },
+  { cat:"sugg_numerique", name:"Braise matin + soir uniquement", desc:"Usage limité à 2 créneaux",               schedule:{type:"daily",days:[]} },
+  { cat:"sugg_numerique", name:"Poches vides à table et en séance", desc:"Téléphone physiquement absent",        schedule:{type:"daily",days:[]} },
+
+  { cat:"sugg_mental", name:"Journal 3 lignes",          desc:"Réussite / apprentissage / intention du soir",    schedule:{type:"daily",days:[]} },
+  { cat:"sugg_mental", name:"Lecture papier 20 min",     desc:"Remplace le scroll du soir",                      schedule:{type:"daily",days:[]} },
+  { cat:"sugg_mental", name:"10 min sans rien",          desc:"Pause sans écran ni podcast",                     schedule:{type:"daily",days:[]} },
+  { cat:"sugg_mental", name:"Contact social planifié",   desc:"Appel ou rencontre, 1x/semaine",                  schedule:{type:"weekly",days:[0]} },
+  { cat:"sugg_mental", name:"Side-project dev",          desc:"Création plutôt que consommation, 2x/semaine",    schedule:{type:"weekdays",days:[3,6]} },
+  { cat:"sugg_mental", name:"Cuisiner une nouvelle recette", desc:"Compétence + créativité",                     schedule:{type:"weekly",days:[6]} }
+];
+
+// NOUVEAU (Suggestions) : écran de sélection — rien n'est ajouté sans cochage explicite
+function renderSuggestions(){
+  let html = `<h2 class="date">Suggestions d'habitudes</h2>
+  <p style="color:var(--muted); font-size:.85rem; margin:4px 2px 0">Coche celles qui te parlent — rien n'est ajouté sans ton accord. Une fois ajoutée, chaque habitude devient une habitude normale, modifiable ou supprimable dans les réglages.</p>`;
+  SUGGESTED_CATEGORIES.forEach(c => {
+    html += `<h2><span class="cat-dot" style="background:${c.color}; display:inline-block; margin-right:6px"></span>${esc(c.name)}</h2><div class="card">`;
+    SUGGESTED_HABITS.forEach((s, idx) => {
+      if(s.cat !== c.id) return;
+      // Le badge "Suggéré" disparaît une fois l'habitude ajoutée (détection par nom identique)
+      const already = D.habits.some(h => !h.archived && h.name === s.name);
+      if(already){
+        html += `<div class="row done" style="cursor:default"><span class="chk">✓</span>
+          <span class="name wrap">${esc(s.name)}<small>${esc(s.desc)}</small></span></div>`;
+      } else {
+        html += `<label class="row sugg"><input type="checkbox" class="sugg-chk" data-i="${idx}">
+          <span class="chk">✓</span>
+          <span class="name wrap">${esc(s.name)}<small>${esc(s.desc)}</small></span>
+          <span class="sugg-badge">Suggéré</span></label>`;
+      }
+    });
+    html += `</div>`;
+  });
+  html += `<div style="display:flex; gap:10px; margin-top:20px">
+    <button class="btn" style="flex:1" onclick="addSelectedSuggestions()">Ajouter la sélection</button>
+    <button class="btn-ghost" style="flex:1" onclick="showTab('today')">Passer</button>
+  </div>`;
+  view.innerHTML = html;
+  document.querySelector("main").scrollTop = 0;
+}
+
+// NOUVEAU (Suggestions) : ajout des habitudes cochées — mêmes champs qu'une création manuelle
+function addSelectedSuggestions(){
+  const checked = [...document.querySelectorAll(".sugg-chk:checked")].map(i => SUGGESTED_HABITS[+i.dataset.i]);
+  if(checked.length === 0){ toast("Coche au moins une habitude (ou Passer)"); return; }
+  checked.forEach(s => {
+    // La catégorie du catalogue n'est créée que si une habitude sélectionnée en a besoin
+    if(!D.categories.some(c => c.id === s.cat)){
+      D.categories.push({ ...SUGGESTED_CATEGORIES.find(c => c.id === s.cat) });
+    }
+    D.habits.push({
+      id:uid("h"), name:s.name, category:s.cat,
+      schedule:{ type:s.schedule.type, days:[...s.schedule.days] },
+      streak:0, bestStreak:0, jokerUsedThisWeek:false, archived:false, createdAt:today()
+    });
+  });
+  save();
+  toast(checked.length + " habitude(s) ajoutée(s) 🔥");
+  showTab("today");
+}
 
 /* ================= NOUVEAU (Changement 2) : PROFILS MULTI-UTILISATEURS ================= */
 const PROFILES_KEY = "braise_profiles";   // registre des profils (nom, couleur, hash du PIN)
@@ -784,6 +958,9 @@ async function handlePin(){
       toast("Données existantes migrées vers ton profil ✓");
     }
     unlock(p);
+    // MODIFIÉ (Suggestions) : à la création d'un profil, l'écran de suggestions est
+    // proposé immédiatement après le déverrouillage (l'utilisateur peut Passer)
+    renderSuggestions();
   }
   else if(pin.mode === "delete"){
     if(hash !== currentProfile.pinHash){ pin.buffer = ""; renderKeypad("Code incorrect"); return; }
